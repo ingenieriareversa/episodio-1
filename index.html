@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ingeniería Reversa | 0.1 | Frameworks y componentes</title>
+</head>
+
+<body>
+
+  <card-number-input placeholder="Número" logo="visa"></card-number-input>
+
+  <template id="card-number-input">
+    <style>
+      :host {
+        display: flex;
+      }
+
+      img {
+        width: 100px;
+      }
+    </style>
+    <input id="card-number" type="text" placeholder="Ingrese número de tarjeta" />
+    <img id="card-logo">
+  </template>
+
+  <script>
+    class TemplateService {
+      #templateContent = "";
+
+      constructor(/** @type string */ tagName) {
+        // Busco el template en el HTML donde estoy actualmente.
+        const template = document.querySelector(`template#${tagName}`);
+
+        // Copio su contenido.
+        this.#templateContent = template.content;
+      }
+
+      attachTo(/** @type HTMLElement */ webComponentElement) {
+        // Clono el contenido del template en el Shadow DOM del component
+        const shadowRoot = webComponentElement.attachShadow({ mode: 'open' })
+          .appendChild(this.#templateContent.cloneNode(true));
+      }
+    }
+
+    class CardNumberInput extends HTMLElement {
+      /**
+       * @type HTMLInputElement
+       */
+      #inputElement = null;
+
+      /**
+       * @type HTMLInputElement
+       */
+      #logoElement = null;
+
+      /**
+       * @type string{visa|mastercard}
+       */
+      #logo = null;
+
+      constructor() {
+        super();
+        this.templateService = new TemplateService("card-number-input");
+        this.templateService.attachTo(this);
+      }
+
+      connectedCallback() {
+        this.#inputElement = this.shadowRoot.querySelector("#card-number");
+        this.#logoElement = this.shadowRoot.querySelector("#card-logo");
+
+        const placeholderAttribute = this.getAttribute("placeholder");
+        const logoAttribute = this.getAttribute("logo");
+
+        if (placeholderAttribute) {
+          this.placeholder = placeholderAttribute;
+        }
+
+        if (logoAttribute) {
+          this.#logoChanged(logoAttribute);
+        }
+      }
+
+      attributeChangedCallback(name, oldValue, newValue) {
+        if (name === "logo") {
+          this.#logoChanged(newValue);
+        }
+      }
+
+      #logoChanged(newValue) {
+        this.#logoElement.src = `assets/${newValue}.jpg`;
+        this.#logo = newValue;
+      }
+
+      get placeholder() {
+        return this.#inputElement.getAttribute("placeholder");
+      }
+
+      set placeholder(/** @type string */ value) {
+        this.#inputElement.setAttribute("placeholder", value);
+      }
+
+      get logo() {
+        return this.#logo;
+      }
+
+      set logo(value) {
+        this.#logoChanged(value);
+      }
+    }
+
+    customElements.define("card-number-input", CardNumberInput);
+  </script>
+</body>
+
+</html>
